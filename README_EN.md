@@ -10,7 +10,7 @@ A strict DSH port of `SillyTavern-Environment-Context`, exposing a native **Envi
 pnpm install
 pnpm run check
 pnpm pack
-dsh plugin --profile web add .\dsh-environment-context-0.2.1.tgz
+dsh plugin --profile web add .\dsh-environment-context-0.3.1.tgz
 ```
 
 Restart the existing DSH Web Host, refresh `http://127.0.0.1:3080`, then open **Settings → Environment Context**.
@@ -23,4 +23,4 @@ The plugin includes Open-Meteo, MET Norway, and wttr.in with explicit Open-Meteo
 
 DSH's only non-chat-message solution is the official `systemPrompt.section()`. The plugin therefore removes the meaningless placement setting entirely. `agent.inject()` and dynamic `PromptContext` would persist session events and do not meet this plugin's goal.
 
-Geolocation, Battery Status, and UA Client Hints are used as browser/desktop-WebView equivalents. A desktop shell may withhold location, battery, or model information; unavailable values are reported rather than fabricated.
+Automatic location uses browser Geolocation and battery uses Battery Status, matching the original plugin; neither proxy addresses nor public-IP geolocation are used. Device identity is collected by the DSH Host through Node `os` and Windows CIM, never User-Agent.

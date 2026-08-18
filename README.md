@@ -10,7 +10,7 @@
 pnpm install
 pnpm run check
 pnpm pack
-dsh plugin --profile web add .\dsh-environment-context-0.2.1.tgz
+dsh plugin --profile web add .\dsh-environment-context-0.3.1.tgz
 ```
 
 重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。仅克隆源码不会注册设置页。包导出了 `./package.json`，确保 DSH Host 能发现客户端入口。
@@ -20,7 +20,7 @@ dsh plugin --profile web add .\dsh-environment-context-0.2.1.tgz
 - 时间、时区、星期分别开关。
 - 天气源：Open-Meteo、MET Norway、wttr.in。
 - MET Norway 或 wttr.in 失败时明确警告并回退 Open-Meteo。
-- 地点：手动城市或浏览器 Geolocation 自动定位；自动定位缓存默认 10 分钟。
+- 地点：手动城市或浏览器 Geolocation 自动定位；不使用代理地址或公网 IP。
 - 反向地址解析：自动、Nominatim、BigDataCloud、Photon；自动模式固定按 Nominatim → BigDataCloud → Photon 容错。
 - 地址缓存键包含反向解析供应商，天气缓存键包含天气供应商和坐标，绝不混用。
 - 刷新失败只复用同键旧缓存并标记 stale；电量失败不复用旧值。
@@ -33,12 +33,12 @@ dsh plugin --profile web add .\dsh-environment-context-0.2.1.tgz
 
 DSH 中唯一满足“不创建聊天消息”的方案是官方 `systemPrompt.section()`，因此插件不再显示无意义的“注入位置”设置项。`agent.inject()` 和动态 `PromptContext` 都会形成持久会话事件，不符合本插件目标。
 
-## 浏览器与桌面端替代接口
+## 系统与浏览器接口
 
-- 自动位置：Web Geolocation API。`localhost` 属安全上下文；首次使用会请求授权。桌面壳若禁用定位权限则无法获取，没有可信的 Host 通用替代接口。
-- 电量：Battery Status API。Chromium/桌面壳可能不提供，此时明确显示不可用；不会调用平台私有 API 或伪造值。
-- 设备：User-Agent Client Hints，回退 User-Agent。Web 标准无法读取用户设置的真实设备名，使用自定义名称或平台通用名称。
-- 网络：全部为浏览器 HTTPS/CORS 请求，与原酒馆插件相同，不启动子进程。
+- 自动位置：浏览器 Geolocation API；不读取代理地址或公网 IP。
+- 电量：浏览器 Battery Status API，与原插件一致；失败不复用旧值。
+- 设备：DSH Host 使用 Node `os` 与 Windows CIM `Win32_ComputerSystem` / `Win32_OperatingSystem`，不使用 User-Agent；可获得计算机名、制造商、机型和系统版本。
+- 设备采集的 PowerShell 子进程显式清除所有代理环境变量，有限输出、超时并由 DSH subprocess 服务管理进程树。
 
 ## 隐私
 
