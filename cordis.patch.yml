@@ -4,13 +4,30 @@
       config:
         enabled: true
         locale: zh-CN
-        includeTime: true
-        includeTimezone: true
-        includeWeekday: true
-        includeWeather: true
-        manualLocation: 武汉
+        injectTime: true
+        injectTimezone: true
+        injectWeekday: true
+        injectWeather: true
+        showLocation: true
+        showCondition: true
+        showTemperature: true
+        showFeelsLike: true
+        showHumidity: true
+        showWind: true
         weatherProvider: open-meteo
+        locationMode: manual
+        reverseGeocodingProvider: auto
+        manualLocation: 武汉
         weatherRefreshMinutes: 30
-        includeBattery: true
-        includeDevice: true
+        locationRefreshMinutes: 10
+        injectBattery: true
+        showCharging: true
+        injectDevice: true
+        showDeviceName: true
+        showDeviceModel: true
+        showDevicePlatform: true
+        customDeviceName: ''
+        injectionMode: system
+        injectionDepth: 1
+        authorNoteDepth: 4
         sectionOrder: 20

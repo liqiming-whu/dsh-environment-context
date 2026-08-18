@@ -1,6 +1,6 @@
 {
   "name": "dsh-environment-context",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Ephemeral time, weather, location, battery, and device context for DeepSeek Harness",
   "type": "module",
   "main": "lib/index.js",
@@ -22,8 +22,8 @@
   "scripts": {
     "build": "tsdown",
     "watch": "tsdown --watch",
-    "check": "tsc --noEmit && pnpm run build && node test/context.test.mjs",
-    "test": "pnpm run build && node test/context.test.mjs",
+    "check": "tsc --noEmit && pnpm run build && node test/context.test.mjs && node test/weather.test.mjs",
+    "test": "pnpm run build && node test/context.test.mjs && node test/weather.test.mjs",
     "prepare": "pnpm run build"
   },
   "peerDependencies": {

@@ -1,18 +1,9 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs/promises'
 import { formatEnvironment, sanitizeInline, validateSnapshot } from '../lib/index.js'
-
-const options = { locale: 'zh-CN', includeTime: true, includeTimezone: true, includeWeekday: true, includeWeather: true, includeBattery: true, includeDevice: true }
-assert.equal(sanitizeInline('<x>\n model'), 'x model')
-assert.equal(validateSnapshot({ capturedAt: 'nope' }), null)
-const text = formatEnvironment({ capturedAt:'2026-01-01T00:00:00Z', timeZone:'Asia/Shanghai', location:{label:'武汉'}, battery:{percentage:57,charging:false}, device:{platform:'Android'} }, options, new Date('2026-01-02T03:04:05Z'))
-assert.match(text, /【现实环境信息】/)
-assert.match(text, /地点：武汉/)
-assert.match(text, /电量：57%/)
-const fs = await import('node:fs/promises')
-const clientBundle = await fs.readFile(new URL('../lib/client.cjs', import.meta.url), 'utf8')
-const packageJson = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'))
-assert.equal(packageJson.exports['./package.json'], './package.json')
-assert.match(clientBundle, /ctx\.slots\.inject\("settings\.section"/)
-assert.match(clientBundle, /id: "environment-context"/)
-assert.match(clientBundle, /label: \(\) => "环境上下文"/)
-console.log('context and settings registration tests passed')
+const s={enabled:true,locale:'zh-CN',injectTime:true,injectTimezone:true,injectWeekday:true,injectWeather:true,showLocation:true,showCondition:true,showTemperature:true,showFeelsLike:true,showHumidity:true,showWind:true,weatherProvider:'open-meteo',locationMode:'manual',reverseGeocodingProvider:'auto',manualLocation:'武汉',weatherRefreshMinutes:30,locationRefreshMinutes:10,injectBattery:true,showCharging:true,injectDevice:true,showDeviceName:true,showDeviceModel:true,showDevicePlatform:true,customDeviceName:'我的电脑',injectionMode:'system',injectionDepth:1,authorNoteDepth:4,sectionOrder:20}
+assert.equal(sanitizeInline('<x>\n model'),'x model');assert.equal(validateSnapshot({capturedAt:'bad'}),null)
+const text=formatEnvironment({capturedAt:'2026-01-01T00:00:00Z',time:{timeZone:'Asia/Shanghai'},location:{label:'武汉 / 湖北 / 中国'},weather:{condition:'晴',temperature:30,feelsLike:35,humidity:80,windSpeed:8,windDirection:'北'},battery:{percentage:100,charging:true},device:{platform:'Windows'}},s,new Date('2026-08-18T13:00:00Z'))
+for(const part of['【现实环境信息】','地点：武汉 / 湖北 / 中国','天气：晴','温度：30°C（体感：35°C）','湿度：80%','电量：100%','设备名称：我的电脑'])assert.ok(text.includes(part),`prompt missing ${part}`)
+const bundle=await fs.readFile(new URL('../lib/client.cjs',import.meta.url),'utf8');for(const part of['open-meteo','met-norway','wttr.in','nominatim','bigdatacloud','photon','settings.section','立即测试并强制刷新'])assert.ok(bundle.includes(part),`bundle missing ${part}`)
+const pkg=JSON.parse(await fs.readFile(new URL('../package.json',import.meta.url),'utf8'));assert.equal(pkg.exports['./package.json'],'./package.json');console.log('full migration tests passed')

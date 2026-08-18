@@ -2,56 +2,48 @@
 
 [English](README_EN.md)
 
-为 DeepSeek Harness 注入当前时间、时区、星期、天气、地点、浏览器电量和设备信息，并在 **DSH 设置面板**中提供独立的“环境上下文”设置页。
+严格移植自工作区 `SillyTavern-Environment-Context`：在 DSH 原生设置面板提供“环境上下文”，采集时间、天气、地点、电量和设备信息，通过不会创建聊天消息的动态系统提示段注入。
 
-## 设置面板在哪里
-
-安装插件并重启 DSH Web Host 后：
-
-1. 打开 `http://127.0.0.1:3080`。
-2. 点击左侧边栏底部的 **设置**（齿轮图标）。
-3. 在设置面板左侧列表选择 **环境上下文**。
-
-如果没有看到该条目，请确认插件已安装到 `web` profile，而不只是克隆了源码；然后重启 Host 并强制刷新浏览器页面。客户端插件表只在 Host 启动时扫描。0.1.2 修复了 `package.json` 未导出导致 Host 无法发现浏览器客户端包的问题。
-
-## 注入设计
-
-插件注册一个动态 `systemPrompt.section()`：每次模型请求组装时读取 Host 内存中的最新浏览器快照，并合并 Host 侧缓存的 Open-Meteo 天气。它不会调用 `agent.inject()`、不会创建 `user/message`、不会注册 `PromptContext`，所以不会在聊天时间线中追加或逐轮累积环境消息。浏览器快照只驻留进程内存，插件卸载或 Host 重启即消失。
-
-DSH 强制“模型可见即可从会话日志重建”。因此最终请求的系统提示仍属于请求审计信息；插件不能在不破坏 DSH 可重放与审计约束的情况下把模型可见文本从日志彻底抹除。当前方案是在官方约束下污染最小的方案：**单一系统段、每请求覆盖、无聊天节点、无历史快照累积**。
-
-## 功能
-
-- 当前本地时间、时区、星期（按浏览器时区）
-- 手动城市定位与 Open-Meteo 当前天气（免 Key，带缓存和 stale 标记）
-- Battery Status API 电量与充电状态（浏览器支持时）
-- User-Agent Client Hints / UA 平台和型号
-- 原生设置页：总开关、字段开关、地点、刷新间隔、输出语言、立即刷新
-- 浏览器状态通过同源内存端点发送，不写入设置文件和聊天记录
-
-## 安装
-
-只克隆仓库不会让设置页出现，必须把插件安装进 Web profile：
+## 从零安装
 
 ```powershell
-dsh plugin --profile web add D:\\DSH_workspace\\dsh-environment-context
-```
-
-随后重启当前 DSH Web Host，并刷新已有的 `http://127.0.0.1:3080` 页面。不要另起一个 Web 服务替代当前 GUI。
-
-Git 安装应固定 commit；源码安装需要允许该包的 `prepare` 构建脚本。发布 tarball 已包含 `lib/`，无需用户构建。
-
-## 开发
-
-```bash
 pnpm install
 pnpm run check
-pnpm run build
 pnpm pack
+dsh plugin --profile web add .\dsh-environment-context-0.2.0.tgz
 ```
 
-开发客户端改动只有在 DSH checkout 同时运行 `pnpm run dev:web` 时才能通过现有 HMR 接收器自动更新；否则需要重新构建插件并刷新页面。
+重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。仅克隆源码不会注册设置页。包导出了 `./package.json`，确保 DSH Host 能发现客户端入口。
+
+## 完整功能
+
+- 时间、时区、星期分别开关。
+- 天气源：Open-Meteo、MET Norway、wttr.in。
+- MET Norway 或 wttr.in 失败时明确警告并回退 Open-Meteo。
+- 地点：手动城市或浏览器 Geolocation 自动定位；自动定位缓存默认 10 分钟。
+- 反向地址解析：自动、Nominatim、BigDataCloud、Photon；自动模式固定按 Nominatim → BigDataCloud → Photon 容错。
+- 地址缓存键包含反向解析供应商，天气缓存键包含天气供应商和坐标，绝不混用。
+- 刷新失败只复用同键旧缓存并标记 stale；电量失败不复用旧值。
+- 天气状况、地点、温度、体感、湿度、风速均可分别开关。
+- 电量、充电状态、设备名称、型号、平台及自定义设备名称。
+- 动态注入预览、错误/警告状态、立即测试并强制刷新。
+- 自动定位时才展示反向地址解析设置；手动模式只展示城市输入。
+
+## 与 SillyTavern 的唯一不可等价项
+
+SillyTavern 提供 `setExtensionPrompt()` 的系统区、临时聊天深度和作者注释三种位置。DSH 的架构约束是“模型可见即必须可从会话日志重建”：
+
+- `agent.inject()` 和动态 `PromptContext` 会形成持久会话事件，不符合“不污染聊天历史”。
+- DSH 没有不落盘的临时聊天深度或作者注释接口。
+- 因此插件保留相关配置字段用于配置兼容，但设置页只允许 **系统提示词区域**；实际使用官方 `systemPrompt.section()`。这是 DSH 中唯一同时满足可重放约束和不创建聊天消息的方案，不伪造其他模式。
+
+## 浏览器与桌面端替代接口
+
+- 自动位置：Web Geolocation API。`localhost` 属安全上下文；首次使用会请求授权。桌面壳若禁用定位权限则无法获取，没有可信的 Host 通用替代接口。
+- 电量：Battery Status API。Chromium/桌面壳可能不提供，此时明确显示不可用；不会调用平台私有 API 或伪造值。
+- 设备：User-Agent Client Hints，回退 User-Agent。Web 标准无法读取用户设置的真实设备名，使用自定义名称或平台通用名称。
+- 网络：全部为浏览器 HTTPS/CORS 请求，与原酒馆插件相同，不启动子进程。
 
 ## 隐私
 
-手动地点会发送给 Open-Meteo Geocoding；坐标和天气由 Host 请求 Open-Meteo。电量与设备摘要只从浏览器发送到同源 DSH Host 内存，不发送到天气服务。远程浏览器受 DSH 设置 RPC 的 loopback 限制，设置页可能只读。
+手动地点发送给 Open-Meteo Geocoding；自动坐标发送给所选天气源和反向解析源。电量与设备摘要只通过同源接口发送到当前 DSH Host 内存，Host 重启即消失，不写设置文件或聊天消息。
