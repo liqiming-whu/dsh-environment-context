@@ -1,6 +1,6 @@
 {
   "name": "dsh-environment-context",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Ephemeral time, weather, location, battery, and device context for DeepSeek Harness",
   "type": "module",
   "main": "lib/index.js",

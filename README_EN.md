@@ -10,7 +10,7 @@ A strict DSH port of `SillyTavern-Environment-Context`, exposing a native **Envi
 pnpm install
 pnpm run check
 pnpm pack
-dsh plugin --profile web add .\dsh-environment-context-0.3.1.tgz
+dsh plugin --profile web add .\dsh-environment-context-0.3.2.tgz
 ```
 
 Restart the existing DSH Web Host, refresh `http://127.0.0.1:3080`, then open **Settings → Environment Context**.

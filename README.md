@@ -10,7 +10,7 @@
 pnpm install
 pnpm run check
 pnpm pack
-dsh plugin --profile web add .\dsh-environment-context-0.3.1.tgz
+dsh plugin --profile web add .\dsh-environment-context-0.3.2.tgz
 ```
 
 重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。仅克隆源码不会注册设置页。包导出了 `./package.json`，确保 DSH Host 能发现客户端入口。

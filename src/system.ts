@@ -1,7 +1,9 @@
 import os from 'node:os'
 import type { Context } from '@deepseek-ai/cordis'
 import '@deepseek-ai/dsh-subprocess'
-const DEVICE_SCRIPT=`$cs=Get-CimInstance Win32_ComputerSystem
+const DEVICE_SCRIPT=`[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+$OutputEncoding = [Console]::OutputEncoding
+$cs=Get-CimInstance Win32_ComputerSystem
 $os=Get-CimInstance Win32_OperatingSystem
 [pscustomobject]@{name=$env:COMPUTERNAME;manufacturer=$cs.Manufacturer;model=$cs.Model;platform=$os.Caption;architecture=$os.OSArchitecture}|ConvertTo-Json -Compress`
 async function powershellJson(ctx:Context,script:string):Promise<any>{const encoded=Buffer.from(script,'utf16le').toString('base64'),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6000);try{const h=ctx.subprocess.spawn({argv:['C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe','-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',encoded],cwd:process.cwd(),stdio:{stdin:'ignore',stdout:{maxBytes:65536},stderr:{maxBytes:16384}},graceMs:1000,signal:controller.signal,env:{HTTP_PROXY:undefined,HTTPS_PROXY:undefined,ALL_PROXY:undefined,NO_PROXY:undefined,http_proxy:undefined,https_proxy:undefined,all_proxy:undefined,no_proxy:undefined}});const out=await h.done;if(out.exitCode!==0)throw new Error(h.collected.stderr?.readFrom(0).text.trim()||`PowerShell exit ${out.exitCode}`);return JSON.parse(h.collected.stdout?.readFrom(0).text.trim()||'{}')}finally{clearTimeout(timer)}}
