@@ -2,25 +2,41 @@
 
 [简体中文](README.md)
 
-A strict DSH port of `SillyTavern-Environment-Context`, exposing a native **Environment Context** settings page and injecting time, weather, location, battery, and device data through one dynamic system-prompt section.
+Real-time time, weather, location, battery, and system-device context for DeepSeek Harness. The plugin contributes a native **Environment Context** settings page and injects one dynamic system-prompt section without creating chat messages or accumulating context nodes.
 
-## Install from scratch
+## Install
+
+Use the standard DSH GitHub plugin form:
+
+```powershell
+dsh plugin --profile web add --allow-build=dsh-environment-context github:liqiming-whu/dsh-environment-context#v0.3.2
+```
+
+`--allow-build` permits the Git source package to run its `prepare` build. Restart the existing DSH Web Host, refresh `http://127.0.0.1:3080`, and open **Settings → Environment Context**.
+
+## Features
+
+- Open-Meteo, MET Norway, and wttr.in, with explicit Open-Meteo fallback.
+- Manual city or browser Geolocation; no proxy-address or public-IP geolocation.
+- Nominatim, BigDataCloud, and Photon reverse geocoding with ordered automatic fallback.
+- Provider-keyed, stale-safe caches and complete display toggles.
+- Browser battery plus Host system identity from Node `os` and Windows CIM.
+- Native settings, conditional fields, live injection preview, status diagnostics, and force-refresh testing.
+
+## Injection and privacy
+
+The plugin uses DSH's official `systemPrompt.section()`. It does not call `agent.inject()` or register dynamic `PromptContext`, so no environment message appears or accumulates in the chat timeline. DSH still records the assembled model-visible system request for replay and audit.
+
+Coordinates are sent only to the selected weather and reverse-geocoding services. Battery and device summaries remain in same-origin Host process memory and disappear on Host restart.
+
+## Development
 
 ```powershell
 pnpm install
 pnpm run check
 pnpm pack
-dsh plugin --profile web add .\dsh-environment-context-0.3.2.tgz
 ```
 
-Restart the existing DSH Web Host, refresh `http://127.0.0.1:3080`, then open **Settings → Environment Context**.
+## License
 
-## Feature parity
-
-The plugin includes Open-Meteo, MET Norway, and wttr.in with explicit Open-Meteo fallback; manual city and browser Geolocation; Nominatim, BigDataCloud, and Photon reverse geocoding with ordered automatic fallback; provider-keyed stale-safe caches; all original display toggles; battery/device collection; conditional settings; live preview; and force-refresh testing.
-
-## Injection method
-
-DSH's only non-chat-message solution is the official `systemPrompt.section()`. The plugin therefore removes the meaningless placement setting entirely. `agent.inject()` and dynamic `PromptContext` would persist session events and do not meet this plugin's goal.
-
-Automatic location uses browser Geolocation and battery uses Battery Status, matching the original plugin; neither proxy addresses nor public-IP geolocation are used. Device identity is collected by the DSH Host through Node `os` and Windows CIM, never User-Agent.
+[MIT](LICENSE)

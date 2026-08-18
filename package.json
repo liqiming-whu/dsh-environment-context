@@ -1,7 +1,11 @@
 {
   "name": "dsh-environment-context",
   "version": "0.3.2",
-  "description": "Ephemeral time, weather, location, battery, and device context for DeepSeek Harness",
+  "description": "Real-time weather, location, battery, and system-device context for DeepSeek Harness",
+  "keywords": ["deepseek-harness", "dsh", "dsh-plugin", "weather", "geolocation", "context"],
+  "repository": { "type": "git", "url": "git+https://github.com/liqiming-whu/dsh-environment-context.git" },
+  "homepage": "https://github.com/liqiming-whu/dsh-environment-context#readme",
+  "bugs": { "url": "https://github.com/liqiming-whu/dsh-environment-context/issues" },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -11,7 +15,7 @@
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib", "cordis.patch.yml", "README.md", "README_EN.md", "LICENSE"],
+  "files": ["lib", "cordis.patch.yml", "README.md", "README_EN.md", "CHANGELOG.md", "LICENSE"],
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
     "client": {
