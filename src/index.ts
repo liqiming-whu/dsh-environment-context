@@ -13,7 +13,7 @@ export const Config:z<Config>=z.object({
  injectWeather:z.boolean().default(true),showLocation:z.boolean().default(true),showCondition:z.boolean().default(true),showTemperature:z.boolean().default(true),showFeelsLike:z.boolean().default(true),showHumidity:z.boolean().default(true),showWind:z.boolean().default(true),
  weatherProvider:z.union(['open-meteo','met-norway','wttr.in']).default('open-meteo'),locationMode:z.union(['manual','auto']).default('manual'),reverseGeocodingProvider:z.union(['auto','nominatim','bigdatacloud','photon']).default('auto'),manualLocation:z.string().default('武汉'),weatherRefreshMinutes:z.number().min(5).max(180).default(30),locationRefreshMinutes:z.number().min(5).max(60).default(10),
  injectBattery:z.boolean().default(true),showCharging:z.boolean().default(true),injectDevice:z.boolean().default(true),showDeviceName:z.boolean().default(true),showDeviceModel:z.boolean().default(true),showDevicePlatform:z.boolean().default(true),customDeviceName:z.string().default(''),
- injectionMode:z.union(['system','in_chat','authors_note']).default('system'),injectionDepth:z.number().min(0).max(100).default(1),authorNoteDepth:z.number().min(0).max(100).default(4),sectionOrder:z.number().default(20)
+ sectionOrder:z.number().default(20)
 })
 const MAX_BODY=64*1024
 async function readJson(req:IncomingMessage){let text='';for await(const chunk of req){text+=chunk.toString();if(text.length>MAX_BODY)throw new Error('payload too large')}return JSON.parse(text||'{}')}

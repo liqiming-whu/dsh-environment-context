@@ -19,7 +19,6 @@ export interface EnvironmentSettings {
   weatherRefreshMinutes: number; locationRefreshMinutes: number
   injectBattery: boolean; showCharging: boolean
   injectDevice: boolean; showDeviceName: boolean; showDeviceModel: boolean; showDevicePlatform: boolean; customDeviceName: string
-  injectionMode: 'system' | 'in_chat' | 'authors_note'; injectionDepth: number; authorNoteDepth: number
   sectionOrder: number
 }
 

@@ -10,7 +10,7 @@
 pnpm install
 pnpm run check
 pnpm pack
-dsh plugin --profile web add .\dsh-environment-context-0.2.0.tgz
+dsh plugin --profile web add .\dsh-environment-context-0.2.1.tgz
 ```
 
 重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。仅克隆源码不会注册设置页。包导出了 `./package.json`，确保 DSH Host 能发现客户端入口。
@@ -29,13 +29,9 @@ dsh plugin --profile web add .\dsh-environment-context-0.2.0.tgz
 - 动态注入预览、错误/警告状态、立即测试并强制刷新。
 - 自动定位时才展示反向地址解析设置；手动模式只展示城市输入。
 
-## 与 SillyTavern 的唯一不可等价项
+## 注入方式
 
-SillyTavern 提供 `setExtensionPrompt()` 的系统区、临时聊天深度和作者注释三种位置。DSH 的架构约束是“模型可见即必须可从会话日志重建”：
-
-- `agent.inject()` 和动态 `PromptContext` 会形成持久会话事件，不符合“不污染聊天历史”。
-- DSH 没有不落盘的临时聊天深度或作者注释接口。
-- 因此插件保留相关配置字段用于配置兼容，但设置页只允许 **系统提示词区域**；实际使用官方 `systemPrompt.section()`。这是 DSH 中唯一同时满足可重放约束和不创建聊天消息的方案，不伪造其他模式。
+DSH 中唯一满足“不创建聊天消息”的方案是官方 `systemPrompt.section()`，因此插件不再显示无意义的“注入位置”设置项。`agent.inject()` 和动态 `PromptContext` 都会形成持久会话事件，不符合本插件目标。
 
 ## 浏览器与桌面端替代接口
 

@@ -27,7 +27,4 @@
         showDeviceModel: true
         showDevicePlatform: true
         customDeviceName: ''
-        injectionMode: system
-        injectionDepth: 1
-        authorNoteDepth: 4
         sectionOrder: 20
