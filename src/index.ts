@@ -6,7 +6,7 @@ import z from '@deepseek-ai/schemastery'
 import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
 import { formatEnvironment, validateSnapshot, type EnvironmentSettings, type EnvironmentSnapshot } from './context.ts'
 import { readSystemEnvironment } from './system.ts'
-export { formatEnvironment, sanitizeInline, validateSnapshot } from './context.ts'
+export { classifyEnvironmentLanguage, formatEnvironment, sanitizeInline, validateSnapshot } from './context.ts'
 export const name='environment-context'; export const inject=['systemPrompt','webServer','subprocess']; export const SETTINGS_NAMESPACE=settingsNamespace('environment-context')
 export type Config=EnvironmentSettings
 export const Config:z<Config>=z.object({

@@ -16,8 +16,9 @@ dsh plugin --profile web add --allow-build=dsh-environment-context github:liqimi
 
 ## 功能
 
+- 自动读取浏览器首选语言：经 BCP 47 规范化后主语言为 `zh`（例如 `zh-CN` 或 `cmn-CN`）时注入中文，其他语言统一注入英文；配置 `locale` 仅作为浏览器语言不可用时的回退。
 - 时间、时区、星期分别开关。
-- 天气源：Open-Meteo、MET Norway、wttr.in。
+- 天气源：Open-Meteo、MET Norway、wttr.in；天气状况、风向和地点请求与注入语言一致。
 - MET Norway 或 wttr.in 失败时明确警告并回退 Open-Meteo。
 - 地点：手动城市或浏览器 Geolocation 自动定位；不使用代理地址或公网 IP。
 - 反向地址解析：Nominatim、BigDataCloud、Photon；自动模式固定按 Nominatim → BigDataCloud → Photon 容错。
@@ -33,6 +34,50 @@ dsh plugin --profile web add --allow-build=dsh-environment-context github:liqimi
 插件使用 DSH 官方 `systemPrompt.section()` 注册单一动态系统提示段。它不会调用 `agent.inject()`，也不使用会形成持久会话事件的动态 `PromptContext`，因此聊天时间线中不会产生环境消息或逐轮累积快照。
 
 DSH 要求模型可见输入可从请求记录重建，因此最终组装后的系统提示仍属于请求审计数据；插件不会绕过该约束。
+
+### 双语注入示例
+
+浏览器首选语言规范化后为中文（例如 `zh-CN` 或 `cmn-CN`）时：
+
+```text
+【现实环境信息】
+当前时间：2026年8月19日 17:36:49
+时区：Asia/Shanghai
+星期：星期三
+地点：武汉 / 湖北 / 中国
+天气：小毛毛雨
+温度：34.4°C（体感：38.7°C）
+湿度：52%
+风速：8.2 km/h 东北
+电量：100%
+充电状态：充电中
+设备信息：
+设备名称：MECHREVO
+设备型号：MECHREVO YAOSHI Series
+平台：Microsoft Windows 11 家庭版 中文版
+```
+
+浏览器首选语言不是中文（例如 `en-US`、`ja-JP` 或 `fr-FR`）时统一注入英文：
+
+```text
+[Current environment]
+Local time: Aug 19, 2026, 5:36:49 PM
+Time zone: Asia/Shanghai
+Weekday: Wednesday
+Location: Wuhan / Hubei / China
+Weather: Light drizzle
+Temperature: 34.4°C (feels like 38.7°C)
+Humidity: 52%
+Wind: 8.2 km/h NE
+Battery: 100%
+Charging: yes
+Device:
+Name: MECHREVO
+Model: MECHREVO YAOSHI Series
+Platform: Microsoft Windows 11 Home
+```
+
+语言会随浏览器提交的最新环境快照更新。地点、天气状况和风向按语言分别请求并使用独立缓存，避免中英文缓存混用。
 
 ## 系统与浏览器接口
 

@@ -1,3 +1,5 @@
+import { classifyEnvironmentLanguage } from '../context.ts';
+
 const HTTP_TIMEOUT_MS = 10_000;
 const MAX_HTTP_BODY_BYTES = 1_000_000;
 const PROVIDERS = new Set(['open-meteo', 'met-norway', 'wttr.in']);
@@ -8,6 +10,13 @@ const WMO_CONDITIONS_ZH = {
     61: '小雨', 63: '中雨', 65: '大雨', 66: '轻微冻雨', 67: '强冻雨',
     71: '小雪', 73: '中雪', 75: '大雪', 77: '米雪', 80: '小阵雨', 81: '中阵雨',
     82: '强阵雨', 85: '小阵雪', 86: '强阵雪', 95: '雷暴', 96: '雷暴伴小冰雹', 99: '雷暴伴强冰雹',
+};
+const WMO_CONDITIONS_EN = {
+    0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Rime fog',
+    51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle', 56: 'Light freezing drizzle', 57: 'Heavy freezing drizzle',
+    61: 'Light rain', 63: 'Moderate rain', 65: 'Heavy rain', 66: 'Light freezing rain', 67: 'Heavy freezing rain',
+    71: 'Light snow', 73: 'Moderate snow', 75: 'Heavy snow', 77: 'Snow grains', 80: 'Light rain showers', 81: 'Moderate rain showers',
+    82: 'Heavy rain showers', 85: 'Light snow showers', 86: 'Heavy snow showers', 95: 'Thunderstorm', 96: 'Thunderstorm with light hail', 99: 'Thunderstorm with heavy hail',
 };
 
 // World Weather Online weatherCode values used by wttr.in. Kept in sync with
@@ -40,6 +49,18 @@ const MET_CONDITIONS_ZH = {
     sleet: '雨夹雪', sleetandthunder: '雨夹雪伴雷暴', sleetshowers: '雨夹雪阵雨',
     sleetshowersandthunder: '雨夹雪阵雨伴雷暴', snow: '雪', snowandthunder: '雪伴雷暴',
     snowshowers: '阵雪', snowshowersandthunder: '阵雪伴雷暴',
+};
+const MET_CONDITIONS_EN = {
+    clearsky: 'Clear sky', cloudy: 'Cloudy', fair: 'Fair', fog: 'Fog', heavyrain: 'Heavy rain',
+    heavyrainandthunder: 'Heavy rain and thunder', heavyrainshowers: 'Heavy rain showers', heavyrainshowersandthunder: 'Heavy rain showers and thunder',
+    heavysleet: 'Heavy sleet', heavysleetandthunder: 'Heavy sleet and thunder', heavysleetshowers: 'Heavy sleet showers', heavysleetshowersandthunder: 'Heavy sleet showers and thunder',
+    heavysnow: 'Heavy snow', heavysnowandthunder: 'Heavy snow and thunder', heavysnowshowers: 'Heavy snow showers', heavysnowshowersandthunder: 'Heavy snow showers and thunder',
+    lightrain: 'Light rain', lightrainandthunder: 'Light rain and thunder', lightrainshowers: 'Light rain showers', lightrainshowersandthunder: 'Light rain showers and thunder',
+    lightsleet: 'Light sleet', lightsleetandthunder: 'Light sleet and thunder', lightsleetshowers: 'Light sleet showers', lightsnow: 'Light snow',
+    lightsnowandthunder: 'Light snow and thunder', lightsnowshowers: 'Light snow showers', partlycloudy: 'Partly cloudy', rain: 'Rain', rainandthunder: 'Rain and thunder',
+    rainshowers: 'Rain showers', rainshowersandthunder: 'Rain showers and thunder', sleet: 'Sleet', sleetandthunder: 'Sleet and thunder',
+    sleetshowers: 'Sleet showers', sleetshowersandthunder: 'Sleet showers and thunder', snow: 'Snow', snowandthunder: 'Snow and thunder',
+    snowshowers: 'Snow showers', snowshowersandthunder: 'Snow showers and thunder',
 };
 
 class TimedCache {
@@ -175,10 +196,12 @@ function formatCoordinates(latitude, longitude) {
     return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 }
 
-function degreesToDirection(degrees) {
+function degreesToDirection(degrees, language = 'zh') {
     const value = finiteNumber(degrees);
     if (value === null) return '';
-    const directions = ['北', '东北', '东', '东南', '南', '西南', '西', '西北'];
+    const directions = language === 'zh'
+        ? ['北', '东北', '东', '东南', '南', '西南', '西', '西北']
+        : ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     return directions[Math.round((((value % 360) + 360) % 360) / 45) % 8];
 }
 
@@ -211,12 +234,12 @@ async function fetchJson(url, options = {}, fetchImpl = globalThis.fetch) {
     }
 }
 
-async function geocodeManualLocation(name, requestJson) {
+async function geocodeManualLocation(name, language, requestJson) {
     if (!name) throw new Error('手动地点不能为空');
     const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
     url.searchParams.set('name', name);
     url.searchParams.set('count', '1');
-    url.searchParams.set('language', 'zh');
+    url.searchParams.set('language', language);
     url.searchParams.set('format', 'json');
     const data = await requestJson(url);
     const result = data?.results?.[0];
@@ -260,13 +283,13 @@ function makeAddress(provider, city, region, country, fallbackLabel = '') {
     };
 }
 
-async function reverseGeocodeNominatim(latitude, longitude, requestJson) {
+async function reverseGeocodeNominatim(latitude, longitude, language, requestJson) {
     const url = new URL('https://nominatim.openstreetmap.org/reverse');
     url.searchParams.set('format', 'jsonv2');
     url.searchParams.set('lat', latitude.toFixed(6));
     url.searchParams.set('lon', longitude.toFixed(6));
     url.searchParams.set('zoom', '10');
-    url.searchParams.set('accept-language', 'zh-CN,zh');
+    url.searchParams.set('accept-language', language === 'zh' ? 'zh-CN,zh' : 'en-US,en');
     const data = await requestJson(url, { timeoutMs: 5_000 });
     const address = data?.address || {};
     return makeAddress(
@@ -278,11 +301,11 @@ async function reverseGeocodeNominatim(latitude, longitude, requestJson) {
     );
 }
 
-async function reverseGeocodeBigDataCloud(latitude, longitude, requestJson) {
+async function reverseGeocodeBigDataCloud(latitude, longitude, language, requestJson) {
     const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
     url.searchParams.set('latitude', latitude.toFixed(6));
     url.searchParams.set('longitude', longitude.toFixed(6));
-    url.searchParams.set('localityLanguage', 'zh');
+    url.searchParams.set('localityLanguage', language);
     const data = await requestJson(url, { timeoutMs: 5_000 });
     return makeAddress(
         'bigdatacloud',
@@ -292,13 +315,13 @@ async function reverseGeocodeBigDataCloud(latitude, longitude, requestJson) {
     );
 }
 
-async function reverseGeocodePhoton(latitude, longitude, requestJson) {
+async function reverseGeocodePhoton(latitude, longitude, language, requestJson) {
     const url = new URL('https://photon.komoot.io/reverse');
     url.searchParams.set('lat', latitude.toFixed(6));
     url.searchParams.set('lon', longitude.toFixed(6));
     const data = await requestJson(url, {
         timeoutMs: 5_000,
-        headers: { 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.5' },
+        headers: { 'Accept-Language': language === 'zh' ? 'zh-CN,zh;q=0.9,en;q=0.5' : 'en-US,en;q=0.9' },
     });
     const properties = data?.features?.[0]?.properties || {};
     return makeAddress(
@@ -310,21 +333,21 @@ async function reverseGeocodePhoton(latitude, longitude, requestJson) {
     );
 }
 
-async function reverseGeocode(provider, latitude, longitude, requestJson) {
+async function reverseGeocode(provider, latitude, longitude, language, requestJson) {
     const loaders = {
         nominatim: reverseGeocodeNominatim,
         bigdatacloud: reverseGeocodeBigDataCloud,
         photon: reverseGeocodePhoton,
     };
     if (provider !== 'auto') {
-        return loaders[provider](latitude, longitude, requestJson);
+        return loaders[provider](latitude, longitude, language, requestJson);
     }
 
     const failures = [];
     for (const candidate of REVERSE_GEOCODER_ORDER) {
         try {
             return {
-                ...await loaders[candidate](latitude, longitude, requestJson),
+                ...await loaders[candidate](latitude, longitude, language, requestJson),
                 addressFallbackErrors: failures,
             };
         } catch (error) {
@@ -351,7 +374,7 @@ function readBrowserLocation(rawQuery) {
     };
 }
 
-async function fetchOpenMeteo(location, requestJson) {
+async function fetchOpenMeteo(location, language, requestJson) {
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude', location.latitude.toFixed(6));
     url.searchParams.set('longitude', location.longitude.toFixed(6));
@@ -363,23 +386,23 @@ async function fetchOpenMeteo(location, requestJson) {
     const current = data?.current;
     if (!current) throw new Error('Open-Meteo 没有返回当前天气');
     return {
-        condition: WMO_CONDITIONS_ZH[current.weather_code] || `天气代码 ${current.weather_code}`,
+        condition: (language === 'zh' ? WMO_CONDITIONS_ZH : WMO_CONDITIONS_EN)[current.weather_code] || (language === 'zh' ? `天气代码 ${current.weather_code}` : `Weather code ${current.weather_code}`),
         temperature: finiteNumber(current.temperature_2m),
         feelsLike: finiteNumber(current.apparent_temperature),
         humidity: finiteNumber(current.relative_humidity_2m),
         windSpeed: finiteNumber(current.wind_speed_10m),
-        windDirection: degreesToDirection(current.wind_direction_10m),
+        windDirection: degreesToDirection(current.wind_direction_10m, language),
         timeZone: queryString(data.timezone, '', 80),
         source: 'Open-Meteo',
     };
 }
 
-function metCondition(symbolCode) {
+function metCondition(symbolCode, language) {
     const base = queryString(symbolCode, '', 80).replace(/_(day|night|polartwilight)$/, '');
-    return MET_CONDITIONS_ZH[base] || base || '未知';
+    return (language === 'zh' ? MET_CONDITIONS_ZH : MET_CONDITIONS_EN)[base] || base || (language === 'zh' ? '未知' : 'Unknown');
 }
 
-async function fetchMetNorway(location, requestJson) {
+async function fetchMetNorway(location, language, requestJson) {
     const url = new URL('https://api.met.no/weatherapi/locationforecast/2.0/complete');
     url.searchParams.set('lat', location.latitude.toFixed(4));
     url.searchParams.set('lon', location.longitude.toFixed(4));
@@ -389,28 +412,29 @@ async function fetchMetNorway(location, requestJson) {
     const details = current.data?.instant?.details || {};
     const summary = current.data?.next_1_hours?.summary || current.data?.next_6_hours?.summary || {};
     return {
-        condition: metCondition(summary.symbol_code),
+        condition: metCondition(summary.symbol_code, language),
         temperature: finiteNumber(details.air_temperature),
         feelsLike: null,
         humidity: finiteNumber(details.relative_humidity),
         windSpeed: finiteNumber(details.wind_speed) === null ? null : finiteNumber(details.wind_speed) * 3.6,
-        windDirection: degreesToDirection(details.wind_from_direction),
+        windDirection: degreesToDirection(details.wind_from_direction, language),
         timeZone: '',
         source: 'MET Norway',
     };
 }
 
-function wttrCondition(localized, weatherCode, english) {
+function wttrCondition(localized, weatherCode, english, language = 'zh') {
+    if (language !== 'zh') return english || localized || 'Unknown';
     if (localized && /[\u3400-\u9fff]/u.test(localized)) return localized;
     const byCode = WTTR_WEATHER_CODES_ZH[Number(weatherCode)];
     return byCode || english || localized || '未知';
 }
 
-async function fetchWttr(location, requestJson) {
+async function fetchWttr(location, language, requestJson) {
     const coordinates = `${location.latitude.toFixed(4)},${location.longitude.toFixed(4)}`;
     const url = new URL(`https://wttr.in/${coordinates}`);
     url.searchParams.set('format', 'j1');
-    url.searchParams.set('lang', 'zh-cn');
+    if (language === 'zh') url.searchParams.set('lang', 'zh-cn');
     const data = await requestJson(url, { timeoutMs: 6_000 });
     const current = data?.current_condition?.[0];
     if (!current) throw new Error('wttr.in 没有返回当前天气');
@@ -421,7 +445,7 @@ async function fetchWttr(location, requestJson) {
     );
     const english = queryString(current.weatherDesc?.[0]?.value, '', 80);
     return {
-        condition: wttrCondition(localized, current.weatherCode, english),
+        condition: wttrCondition(localized, current.weatherCode, english, language),
         temperature: finiteNumber(current.temp_C),
         feelsLike: finiteNumber(current.FeelsLikeC),
         humidity: finiteNumber(current.humidity),
@@ -432,18 +456,18 @@ async function fetchWttr(location, requestJson) {
     };
 }
 
-async function fetchWeather(provider, location, requestJson) {
+async function fetchWeather(provider, location, language, requestJson) {
     try {
-        if (provider === 'open-meteo') return await fetchOpenMeteo(location, requestJson);
-        if (provider === 'met-norway') return await fetchMetNorway(location, requestJson);
-        if (provider === 'wttr.in') return await fetchWttr(location, requestJson);
+        if (provider === 'open-meteo') return await fetchOpenMeteo(location, language, requestJson);
+        if (provider === 'met-norway') return await fetchMetNorway(location, language, requestJson);
+        if (provider === 'wttr.in') return await fetchWttr(location, language, requestJson);
         throw new Error(`不支持的天气提供方：${provider}`);
     } catch (error) {
         if (provider === 'open-meteo') throw error;
         const providerError = safeError(error);
         try {
             return {
-                ...await fetchOpenMeteo(location, requestJson),
+                ...await fetchOpenMeteo(location, language, requestJson),
                 fallbackFrom: provider,
                 fallbackError: providerError,
             };
@@ -462,6 +486,7 @@ function createStatusService(dependencies = {}) {
     return async function getStatus(rawQuery = {}) {
         const includeWeather = queryBoolean(rawQuery.weather, true);
         const forceRefresh = queryBoolean(rawQuery.force, false);
+        const language = classifyEnvironmentLanguage(queryString(rawQuery.locale, 'en-US', 35)) || 'en';
         const providerInput = queryString(rawQuery.provider, 'open-meteo', 32);
         const provider = PROVIDERS.has(providerInput) ? providerInput : 'open-meteo';
         const locationMode = queryString(rawQuery.locationMode, 'manual', 16) === 'auto' ? 'auto' : 'manual';
@@ -483,7 +508,7 @@ function createStatusService(dependencies = {}) {
             weather: null,
             errors,
             warnings: {},
-            meta: { provider, locationMode, reverseGeocodingProvider, forceRefresh },
+            meta: { provider, locationMode, reverseGeocodingProvider, language, forceRefresh },
         };
 
         if (!includeWeather) {
@@ -501,14 +526,14 @@ function createStatusService(dependencies = {}) {
             }
         }
         const locationKey = locationMode === 'auto'
-            ? `browser:${browserLocation.latitude.toFixed(4)},${browserLocation.longitude.toFixed(4)}`
-            : `manual:${manualLocation.toLocaleLowerCase()}`;
+            ? `${language}:browser:${browserLocation.latitude.toFixed(4)},${browserLocation.longitude.toFixed(4)}`
+            : `${language}:manual:${manualLocation.toLocaleLowerCase()}`;
 
         try {
             result.location = await locationCache.read(locationKey, locationTtlMs, () => (
                 locationMode === 'auto'
                     ? Promise.resolve(browserLocation)
-                    : geocodeManualLocation(manualLocation, requestJson)
+                    : geocodeManualLocation(manualLocation, language, requestJson)
             ), forceRefresh);
             if (result.location.stale && result.location.refreshError) {
                 errors.location = result.location.refreshError;
@@ -520,8 +545,8 @@ function createStatusService(dependencies = {}) {
         }
 
         const coordinatesKey = `${result.location.latitude.toFixed(4)},${result.location.longitude.toFixed(4)}`;
-        const addressKey = `${reverseGeocodingProvider}:${coordinatesKey}`;
-        const weatherKey = `${provider}:${coordinatesKey}`;
+        const addressKey = `${language}:${reverseGeocodingProvider}:${coordinatesKey}`;
+        const weatherKey = `${language}:${provider}:${coordinatesKey}`;
         const followUpTasks = [];
 
         if (locationMode === 'auto') {
@@ -532,6 +557,7 @@ function createStatusService(dependencies = {}) {
                             reverseGeocodingProvider,
                             result.location.latitude,
                             result.location.longitude,
+                            language,
                             requestJson,
                         )
                     ), forceRefresh);
@@ -558,7 +584,7 @@ function createStatusService(dependencies = {}) {
         followUpTasks.push((async () => {
             try {
                 result.weather = await weatherCache.read(weatherKey, weatherTtlMs, () => (
-                    fetchWeather(provider, result.location, requestJson)
+                    fetchWeather(provider, result.location, language, requestJson)
                 ), forceRefresh);
                 if (result.weather.stale && result.weather.refreshError) {
                     errors.weather = result.weather.refreshError;
