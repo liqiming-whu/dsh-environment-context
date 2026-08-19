@@ -6,13 +6,13 @@
 
 ## 安装
 
-使用 DSH 官方 GitHub 插件安装格式：
+使用 DSH 官方 GitHub 插件安装格式（不指定版本号，默认安装仓库最新版）：
 
 ```powershell
-dsh plugin --profile web add --allow-build=dsh-environment-context github:liqiming-whu/dsh-environment-context#v0.3.2
+dsh plugin --profile web add --allow-build=dsh-environment-context github:liqiming-whu/dsh-environment-context --trust-lockfile
 ```
 
-`--allow-build` 允许 Git 源码包执行 `prepare` 构建脚本。安装后重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。
+`--allow-build` 允许 Git 源码包执行 `prepare` 构建脚本；`--trust-lockfile` 跳过 lockfile 供应链校验（新发布不足 24 小时的版本会触发 pnpm 的 `minimumReleaseAge` 拦截，你的 pnpm 不接受该选项时可去掉）。安装后重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。
 
 ## 功能
 

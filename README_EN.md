@@ -6,13 +6,13 @@ Real-time time, weather, location, battery, and system-device context for DeepSe
 
 ## Install
 
-Use the standard DSH GitHub plugin form:
+Use the standard DSH GitHub plugin form (no version pin — installs the latest from the repository):
 
 ```powershell
-dsh plugin --profile web add --allow-build=dsh-environment-context github:liqiming-whu/dsh-environment-context#v0.3.2
+dsh plugin --profile web add --allow-build=dsh-environment-context github:liqiming-whu/dsh-environment-context --trust-lockfile
 ```
 
-`--allow-build` permits the Git source package to run its `prepare` build. Restart the existing DSH Web Host, refresh `http://127.0.0.1:3080`, and open **Settings → Environment Context**.
+`--allow-build` permits the Git source package to run its `prepare` build; `--trust-lockfile` skips the lockfile supply-chain verification (versions published less than 24 hours ago trip pnpm's `minimumReleaseAge` gate — drop it if your pnpm does not accept the flag). Restart the existing DSH Web Host, refresh `http://127.0.0.1:3080`, and open **Settings → Environment Context**.
 
 ## Features
 
