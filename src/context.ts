@@ -15,7 +15,7 @@ export interface EnvironmentSettings {
   enabled: boolean; locale: string
   injectTime: boolean; injectTimezone: boolean; injectWeekday: boolean
   injectWeather: boolean; showLocation: boolean; showCondition: boolean; showTemperature: boolean; showFeelsLike: boolean; showHumidity: boolean; showWind: boolean
-  weatherProvider: 'open-meteo' | 'met-norway' | 'wttr.in'
+  weatherProvider: 'auto' | 'open-meteo' | 'met-norway' | 'wttr.in'
   locationMode: 'manual' | 'auto'; reverseGeocodingProvider: 'auto' | 'nominatim' | 'bigdatacloud' | 'photon'; manualLocation: string
   weatherRefreshMinutes: number; locationRefreshMinutes: number
   injectBattery: boolean; showCharging: boolean
@@ -28,8 +28,8 @@ export function validateSnapshot(value: unknown): EnvironmentSnapshot | null { i
 const finite=(v:unknown)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))
 const num=(v:unknown)=>Number.isInteger(Number(v))?String(Number(v)):Number(v).toFixed(1).replace(/\.0$/,'')
 export function classifyEnvironmentLanguage(value:unknown):'zh'|'en'|undefined{
-  const candidate=sanitizeInline(value,35);if(!candidate)return undefined
-  try{const canonical=Intl.getCanonicalLocales(candidate)[0];if(!canonical)return undefined;return canonical.split('-')[0]?.toLowerCase()==='zh'?'zh':'en'}catch{return undefined}
+  const candidate=sanitizeInline(value,35).toLowerCase().replace(/_/g,'-');if(!candidate)return undefined
+  return candidate.startsWith('zh')?'zh':'en'
 }
 function promptLocale(snapshotLocale:unknown,fallback:unknown):'zh-CN'|'en-US'{
   for(const value of [snapshotLocale,fallback,'en-US']){const language=classifyEnvironmentLanguage(value);if(language)return language==='zh'?'zh-CN':'en-US'}

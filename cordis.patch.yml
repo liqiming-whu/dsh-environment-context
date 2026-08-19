@@ -14,7 +14,7 @@
         showFeelsLike: true
         showHumidity: true
         showWind: true
-        weatherProvider: open-meteo
+        weatherProvider: auto
         locationMode: manual
         reverseGeocodingProvider: auto
         manualLocation: 武汉

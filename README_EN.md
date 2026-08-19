@@ -16,9 +16,11 @@ dsh plugin --profile web add --allow-build=dsh-environment-context github:liqimi
 
 ## Features
 
-- Automatic browser-language detection: Chinese language tags normalized to `zh` receive Chinese context; every other locale receives English context. The configured `locale` is only a fallback when the browser language is unavailable.
+- Automatic browser-language detection: preferred-language strings beginning with `zh` (including `zh-CN`, `zh-TW`, and `zh_CN`) use Chinese; every other language uses English. The configured `locale` is only a fallback when the browser language is unavailable.
+- The settings-page title, fields, options, help text, and status messages follow the same Chinese/English rule.
 - Independent toggles for time, time zone, and weekday.
-- Open-Meteo, MET Norway, and wttr.in, with explicit Open-Meteo fallback and language-aligned conditions, wind directions, and location requests.
+- Open-Meteo, MET Norway, and wttr.in. Auto mode fails over strictly in this order: Open-Meteo → MET Norway → wttr.in; an explicitly selected provider is used alone.
+- Language-aligned weather conditions, wind directions, and location requests.
 - Manual city or browser Geolocation; no proxy-address or public-IP geolocation.
 - Nominatim, BigDataCloud, and Photon reverse geocoding with ordered automatic fallback.
 - Address caches keyed by reverse-geocoding provider and language; weather caches keyed by provider, coordinates, and language.
@@ -33,14 +35,14 @@ The plugin uses DSH's official `systemPrompt.section()`. It does not call `agent
 
 ### Bilingual injection examples
 
-When the browser's preferred language canonicalizes to Chinese, such as `zh-CN` or `cmn-CN`:
+When the browser's preferred language begins with `zh`, such as `zh-CN`, `zh-TW`, or `zh_CN`:
 
 ```text
 【现实环境信息】
 当前时间：2026年8月19日 17:36:49
 时区：Asia/Shanghai
 星期：星期三
-地点：武汉 / 湖北 / 中国
+地点：<当前地点>
 天气：小毛毛雨
 温度：34.4°C（体感：38.7°C）
 湿度：52%
@@ -48,9 +50,9 @@ When the browser's preferred language canonicalizes to Chinese, such as `zh-CN` 
 电量：100%
 充电状态：充电中
 设备信息：
-设备名称：MECHREVO
-设备型号：MECHREVO YAOSHI Series
-平台：Microsoft Windows 11 家庭版 中文版
+设备名称：<设备名称>
+设备型号：<设备型号>
+平台：Microsoft Windows 11
 ```
 
 For every non-Chinese browser language, such as `en-US`, `ja-JP`, or `fr-FR`:
@@ -60,7 +62,7 @@ For every non-Chinese browser language, such as `en-US`, `ja-JP`, or `fr-FR`:
 Local time: Aug 19, 2026, 5:36:49 PM
 Time zone: Asia/Shanghai
 Weekday: Wednesday
-Location: Wuhan / Hubei / China
+Location: <Current location>
 Weather: Light drizzle
 Temperature: 34.4°C (feels like 38.7°C)
 Humidity: 52%
@@ -68,14 +70,14 @@ Wind: 8.2 km/h NE
 Battery: 100%
 Charging: yes
 Device:
-Name: MECHREVO
-Model: MECHREVO YAOSHI Series
-Platform: Microsoft Windows 11 Home
+Name: <Device name>
+Model: <Device model>
+Platform: Microsoft Windows 11
 ```
 
 The language follows the latest environment snapshot submitted by the browser. Location, weather condition, and wind direction requests use language-specific cache keys, preventing Chinese and English data from being mixed.
 
-Coordinates are sent only to the selected weather and reverse-geocoding services. Battery and device summaries remain in same-origin Host process memory and disappear on Host restart.
+Coordinates are sent to explicitly selected weather and reverse-geocoding services. In either auto mode, providers are tried one at a time in the documented order and stop after the first success. Battery and device summaries remain in same-origin Host process memory and disappear on Host restart.
 
 ## Development
 

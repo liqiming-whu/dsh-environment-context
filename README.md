@@ -16,10 +16,11 @@ dsh plugin --profile web add --allow-build=dsh-environment-context github:liqimi
 
 ## 功能
 
-- 自动读取浏览器首选语言：经 BCP 47 规范化后主语言为 `zh`（例如 `zh-CN` 或 `cmn-CN`）时注入中文，其他语言统一注入英文；配置 `locale` 仅作为浏览器语言不可用时的回退。
+- 自动读取浏览器首选语言：语言字符串以 `zh` 开头（例如 `zh-CN`、`zh-TW`、`zh_CN`）时使用中文，其余语言使用英文；配置 `locale` 仅作为浏览器语言不可用时的回退。
+- 设置页标题、字段、选项、提示和状态文案与上述语言规则同步切换。
 - 时间、时区、星期分别开关。
-- 天气源：Open-Meteo、MET Norway、wttr.in；天气状况、风向和地点请求与注入语言一致。
-- MET Norway 或 wttr.in 失败时明确警告并回退 Open-Meteo。
+- 天气源：Open-Meteo、MET Norway、wttr.in；自动模式严格按 Open-Meteo → MET Norway → wttr.in 顺序容错，手动选择某个提供方时只请求该提供方。
+- 天气状况、风向和地点请求与注入语言一致。
 - 地点：手动城市或浏览器 Geolocation 自动定位；不使用代理地址或公网 IP。
 - 反向地址解析：Nominatim、BigDataCloud、Photon；自动模式固定按 Nominatim → BigDataCloud → Photon 容错。
 - 地址缓存键包含反向解析供应商，天气缓存键包含天气供应商和坐标，避免跨源混用。
@@ -37,14 +38,14 @@ DSH 要求模型可见输入可从请求记录重建，因此最终组装后的�
 
 ### 双语注入示例
 
-浏览器首选语言规范化后为中文（例如 `zh-CN` 或 `cmn-CN`）时：
+浏览器首选语言以 `zh` 开头（例如 `zh-CN`、`zh-TW` 或 `zh_CN`）时：
 
 ```text
 【现实环境信息】
 当前时间：2026年8月19日 17:36:49
 时区：Asia/Shanghai
 星期：星期三
-地点：武汉 / 湖北 / 中国
+地点：<当前地点>
 天气：小毛毛雨
 温度：34.4°C（体感：38.7°C）
 湿度：52%
@@ -52,9 +53,9 @@ DSH 要求模型可见输入可从请求记录重建，因此最终组装后的�
 电量：100%
 充电状态：充电中
 设备信息：
-设备名称：MECHREVO
-设备型号：MECHREVO YAOSHI Series
-平台：Microsoft Windows 11 家庭版 中文版
+设备名称：<设备名称>
+设备型号：<设备型号>
+平台：Microsoft Windows 11
 ```
 
 浏览器首选语言不是中文（例如 `en-US`、`ja-JP` 或 `fr-FR`）时统一注入英文：
@@ -64,7 +65,7 @@ DSH 要求模型可见输入可从请求记录重建，因此最终组装后的�
 Local time: Aug 19, 2026, 5:36:49 PM
 Time zone: Asia/Shanghai
 Weekday: Wednesday
-Location: Wuhan / Hubei / China
+Location: <Current location>
 Weather: Light drizzle
 Temperature: 34.4°C (feels like 38.7°C)
 Humidity: 52%
@@ -72,9 +73,9 @@ Wind: 8.2 km/h NE
 Battery: 100%
 Charging: yes
 Device:
-Name: MECHREVO
-Model: MECHREVO YAOSHI Series
-Platform: Microsoft Windows 11 Home
+Name: <Device name>
+Model: <Device model>
+Platform: Microsoft Windows 11
 ```
 
 语言会随浏览器提交的最新环境快照更新。地点、天气状况和风向按语言分别请求并使用独立缓存，避免中英文缓存混用。
@@ -88,7 +89,7 @@ Platform: Microsoft Windows 11 Home
 
 ## 隐私
 
-手动地点发送给 Open-Meteo Geocoding。自动坐标只发送给所选天气源和反向地址解析源。电量与设备摘要仅通过同源接口进入当前 DSH Host 内存，Host 重启即消失，不写入聊天消息。
+手动地点发送给 Open-Meteo Geocoding。自动坐标发送给手动选定的天气/反向地址解析源；启用自动模式时会严格按文档顺序逐个请求，成功后停止。电量与设备摘要仅通过同源接口进入当前 DSH Host 内存，Host 重启即消失，不写入聊天消息。
 
 ## 开发与验证
 

@@ -12,7 +12,7 @@ export type Config=EnvironmentSettings
 export const Config:z<Config>=z.object({
  enabled:z.boolean().default(true),locale:z.string().default('zh-CN'),injectTime:z.boolean().default(true),injectTimezone:z.boolean().default(true),injectWeekday:z.boolean().default(true),
  injectWeather:z.boolean().default(true),showLocation:z.boolean().default(true),showCondition:z.boolean().default(true),showTemperature:z.boolean().default(true),showFeelsLike:z.boolean().default(true),showHumidity:z.boolean().default(true),showWind:z.boolean().default(true),
- weatherProvider:z.union(['open-meteo','met-norway','wttr.in']).default('open-meteo'),locationMode:z.union(['manual','auto']).default('manual'),reverseGeocodingProvider:z.union(['auto','nominatim','bigdatacloud','photon']).default('auto'),manualLocation:z.string().default('武汉'),weatherRefreshMinutes:z.number().min(5).max(180).default(30),locationRefreshMinutes:z.number().min(5).max(60).default(10),
+ weatherProvider:z.union(['auto','open-meteo','met-norway','wttr.in']).default('auto'),locationMode:z.union(['manual','auto']).default('manual'),reverseGeocodingProvider:z.union(['auto','nominatim','bigdatacloud','photon']).default('auto'),manualLocation:z.string().default('武汉'),weatherRefreshMinutes:z.number().min(5).max(180).default(30),locationRefreshMinutes:z.number().min(5).max(60).default(10),
  injectBattery:z.boolean().default(true),showCharging:z.boolean().default(true),injectDevice:z.boolean().default(true),showDeviceName:z.boolean().default(true),showDeviceModel:z.boolean().default(true),showDevicePlatform:z.boolean().default(true),customDeviceName:z.string().default(''),
  sectionOrder:z.number().default(20)
 })

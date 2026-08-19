@@ -2,7 +2,8 @@ import { classifyEnvironmentLanguage } from '../context.ts';
 
 const HTTP_TIMEOUT_MS = 10_000;
 const MAX_HTTP_BODY_BYTES = 1_000_000;
-const PROVIDERS = new Set(['open-meteo', 'met-norway', 'wttr.in']);
+const WEATHER_PROVIDER_ORDER = ['open-meteo', 'met-norway', 'wttr.in'];
+const PROVIDERS = new Set(['auto', ...WEATHER_PROVIDER_ORDER]);
 
 const WMO_CONDITIONS_ZH = {
     0: '晴', 1: '大部晴朗', 2: '局部多云', 3: '阴', 45: '雾', 48: '雾凇',
@@ -457,24 +458,28 @@ async function fetchWttr(location, language, requestJson) {
 }
 
 async function fetchWeather(provider, location, language, requestJson) {
-    try {
-        if (provider === 'open-meteo') return await fetchOpenMeteo(location, language, requestJson);
-        if (provider === 'met-norway') return await fetchMetNorway(location, language, requestJson);
-        if (provider === 'wttr.in') return await fetchWttr(location, language, requestJson);
-        throw new Error(`不支持的天气提供方：${provider}`);
-    } catch (error) {
-        if (provider === 'open-meteo') throw error;
-        const providerError = safeError(error);
+    const loaders = {
+        'open-meteo': fetchOpenMeteo,
+        'met-norway': fetchMetNorway,
+        'wttr.in': fetchWttr,
+    };
+    if (provider !== 'auto') {
+        const loader = loaders[provider];
+        if (!loader) throw new Error(`不支持的天气提供方：${provider}`);
+        return loader(location, language, requestJson);
+    }
+    const failures = [];
+    for (const candidate of WEATHER_PROVIDER_ORDER) {
         try {
             return {
-                ...await fetchOpenMeteo(location, language, requestJson),
-                fallbackFrom: provider,
-                fallbackError: providerError,
+                ...await loaders[candidate](location, language, requestJson),
+                weatherFallbackErrors: failures,
             };
-        } catch (fallbackError) {
-            throw new Error(`${provider} 失败：${providerError}；Open-Meteo 回退也失败：${safeError(fallbackError)}`);
+        } catch (error) {
+            failures.push(`${candidate}: ${safeError(error)}`);
         }
     }
+    throw new Error(language === 'zh' ? `所有天气提供方均失败：${failures.join('；')}` : `All weather providers failed: ${failures.join('; ')}`);
 }
 
 function createStatusService(dependencies = {}) {
@@ -487,8 +492,8 @@ function createStatusService(dependencies = {}) {
         const includeWeather = queryBoolean(rawQuery.weather, true);
         const forceRefresh = queryBoolean(rawQuery.force, false);
         const language = classifyEnvironmentLanguage(queryString(rawQuery.locale, 'en-US', 35)) || 'en';
-        const providerInput = queryString(rawQuery.provider, 'open-meteo', 32);
-        const provider = PROVIDERS.has(providerInput) ? providerInput : 'open-meteo';
+        const providerInput = queryString(rawQuery.provider, 'auto', 32);
+        const provider = PROVIDERS.has(providerInput) ? providerInput : 'auto';
         const locationMode = queryString(rawQuery.locationMode, 'manual', 16) === 'auto' ? 'auto' : 'manual';
         const reverseProviderInput = queryString(rawQuery.reverseGeocodingProvider, 'auto', 32);
         const reverseGeocodingProvider = ['auto', ...REVERSE_GEOCODER_ORDER].includes(reverseProviderInput)
@@ -589,8 +594,10 @@ function createStatusService(dependencies = {}) {
                 if (result.weather.stale && result.weather.refreshError) {
                     errors.weather = result.weather.refreshError;
                 }
-                if (result.weather.fallbackFrom) {
-                    result.warnings.weather = `${result.weather.fallbackFrom} 暂不可用（${result.weather.fallbackError}），已回退到 Open-Meteo`;
+                if (result.weather.weatherFallbackErrors?.length) {
+                    result.warnings.weather = language === 'zh'
+                        ? `${result.weather.weatherFallbackErrors.join('；')}；已使用 ${result.weather.source}`
+                        : `${result.weather.weatherFallbackErrors.join('; ')}; using ${result.weather.source}`;
                 }
                 if (result.weather.timeZone) result.time.timeZone = result.weather.timeZone;
                 else if (result.location.timeZone) result.time.timeZone = result.location.timeZone;
