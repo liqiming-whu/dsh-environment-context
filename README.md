@@ -1,7 +1,5 @@
 # DSH 环境上下文
 
-[![Linux.do](https://img.shields.io/badge/Linux.do-Community-00A67D?style=flat-square)](https://linux.do)
-
 [English](README_EN.md)
 
 为 DeepSeek Harness 提供实时环境上下文：时间、天气、地点、电量和设备信息。插件在 DSH 原生设置面板中注册“环境上下文”页面，并通过动态系统提示段注入当前状态，不创建聊天消息或累积上下文节点。
@@ -109,3 +107,6 @@ pnpm pack
 ## 许可证
 
 [MIT](LICENSE)
+
+## 友情链接
+[Linux.Do](https://linux.do/) — 新的理想型社区
