@@ -4,6 +4,10 @@
 
 为 DeepSeek Harness 提供实时环境上下文：时间、天气、地点、电量和设备信息。插件在 DSH 原生设置面板中注册“环境上下文”页面，并通过动态系统提示段注入当前状态，不创建聊天消息或累积上下文节点。
 
+## 兼容性
+
+面向 **DSH 0.2.0-rc.2**。用户设置是插件 `Config` 上的 volatile 字段，Host 在每次提示组装时通过插件条目读取，因此**保存设置后下一次模型请求即生效，无需新建会话，也不会因此重启插件**；安装或更新插件本身仍需重启 `dsh web` / 桌面应用并硬刷新页面。0.3.x 及更早版本对应 DSH 0.1.x 的设置接口，不适用于 0.2。
+
 ## 安装
 
 使用 DSH 官方 GitHub 插件安装格式（不指定版本号，默认安装仓库最新版）：
@@ -12,7 +16,7 @@
 dsh plugin --profile web add --allow-build=dsh-environment-context github:liqiming-whu/dsh-environment-context --trust-lockfile
 ```
 
-`--allow-build` 允许 Git 源码包执行 `prepare` 构建脚本；`--trust-lockfile` 跳过 lockfile 供应链校验（新发布不足 24 小时的版本会触发 pnpm 的 `minimumReleaseAge` 拦截，你的 pnpm 不接受该选项时可去掉）。安装后重启当前 DSH Web Host，刷新 `http://127.0.0.1:3080`，点击左侧底部 **设置** → **环境上下文**。
+`--allow-build` 允许 Git 源码包执行 `prepare` 构建脚本；`--trust-lockfile` 跳过 lockfile 供应链校验（新发布不足 24 小时的版本会触发 pnpm 的 `minimumReleaseAge` 拦截，你的 pnpm 不接受该选项时可去掉）。桌面应用使用的 profile 名是 `desktop`（`dsh web` 为 `web`），请按实际运行方式替换 `--profile`。安装后重启 DSH，刷新 `dsh web` 打印的地址，点击左侧底部 **设置** → **环境上下文**。
 
 > [!WARNING]
 > **请按需开启：动态环境注入可能降低提示词缓存命中率。** 时间、天气、地点、电量和设备信息会随快照、刷新、浏览器语言或设置变化，导致最终系统提示前缀发生变化；即使对话内容不变，也可能减少模型服务的前缀/提示词缓存复用，增加延迟，并可能影响缓存计费优惠。对稳定性优先的编码、文档和长会话任务，建议保持关闭；推荐仅在确实需要实时环境氛围的 RP（角色扮演）场景中开启。
@@ -36,6 +40,8 @@ dsh plugin --profile web add --allow-build=dsh-environment-context github:liqimi
 ## 注入方式
 
 插件使用 DSH 官方 `systemPrompt.section()` 注册单一动态系统提示段。它不会调用 `agent.inject()`，也不使用会形成持久会话事件的动态 `PromptContext`，因此聊天时间线中不会产生环境消息或逐轮累积快照。
+
+该段落以 `interpolate: false` 注册：快照文本（地点名、天气描述、自定义设备名）不会被当作 `{{变量}}` 解析，避免外部数据被误读为提示变量。
 
 DSH 要求模型可见输入可从请求记录重建，因此最终组装后的系统提示仍属于请求审计数据；插件不会绕过该约束。
 
@@ -102,7 +108,7 @@ pnpm run check
 pnpm pack
 ```
 
-项目包含格式化、客户端注册、天气回退、反向地址解析顺序和构建产物测试。
+项目包含格式化、客户端注册、天气回退、反向地址解析顺序和构建产物测试；另覆盖 DSH 0.2 设置迁移：用 `@deepseek-ai/dsh-settings` 自己的 `volatileForm`/`projectForm`/`plainConfig` 复现宿主表单投影后按浏览器方式解码，真调用 `ctx.settings.update()` 并作用于**真实 Loader 条目**（走 `Entry._commitVolatile` 的原地提交，测试断言其 `loader/volatile-update` 事件、下一次组装就渲染新值、且插件只 apply 一次；仅 profile YAML 持久化与 root-Include reconcile 为替身），驱动真实 `systemPrompt` 服务组装注入段，并通过 `ModuleLoader` 协议加载实际客户端包（检查只引用 `react`、注册 `settings.section`、`interpolate: false` 与快照文本不被插值）。
 
 ## 许可证
 

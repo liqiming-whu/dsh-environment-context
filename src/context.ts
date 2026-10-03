@@ -20,7 +20,6 @@ export interface EnvironmentSettings {
   weatherRefreshMinutes: number; locationRefreshMinutes: number
   injectBattery: boolean; showCharging: boolean
   injectDevice: boolean; showDeviceName: boolean; showDeviceModel: boolean; showDevicePlatform: boolean; customDeviceName: string
-  sectionOrder: number
 }
 
 export function sanitizeInline(value: unknown, max = 160): string { return String(value ?? '').replace(/[\u0000-\u001f\u007f<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) }

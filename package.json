@@ -1,6 +1,6 @@
 {
   "name": "dsh-environment-context",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "Real-time weather, location, battery, and system-device context for DeepSeek Harness",
   "keywords": ["deepseek-harness", "dsh", "dsh-plugin", "weather", "geolocation", "context"],
   "repository": { "type": "git", "url": "git+https://github.com/liqiming-whu/dsh-environment-context.git" },
@@ -20,7 +20,7 @@
     "bundle": { "patch": "./cordis.patch.yml" },
     "client": {
       "platform": "web",
-      "inject": ["@deepseek-ai/dsh-api-remotes", "@deepseek-ai/dsh-client-runtime", "@deepseek-ai/dsh-client-connection", "@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-slots", "@deepseek-ai/dsh-client-web-react"]
+      "inject": ["@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-renderer"]
     }
   },
   "scripts": {
@@ -31,39 +31,34 @@
     "prepare": "pnpm run build"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-api-remotes": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-web-react": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-settings": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-system-prompt": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-subprocess": "^0.1.0-rc.7",
-    "@deepseek-ai/schemastery": "^3.0.0",
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-subprocess": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "~3.18.4",
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-api-remotes": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-client-web-react": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-settings": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-system-prompt": "^0.1.0-rc.7",
-    "@deepseek-ai/dsh-subprocess": "^0.1.0-rc.7",
-    "@deepseek-ai/schemastery": "^3.0.0",
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/cordis-plugin-loader": "~1.0.5",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-settings": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-subprocess": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "~3.18.4",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
     "react": "^18.2.0",
     "tsdown": "^0.15.0",
     "typescript": "^5.7.0"
   },
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@11.19.0",
   "license": "MIT"
 }

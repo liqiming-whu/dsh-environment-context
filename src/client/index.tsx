@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useSyncExternalStore } from 'react'
-import type { ClientContext, SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
-import '@deepseek-ai/dsh-client-ui-settings/client'
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import type { Context } from '@deepseek-ai/cordis'
+import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { createStatusService } from './weather.js'
 import { classifyEnvironmentLanguage, formatEnvironment, type EnvironmentSettings, type EnvironmentSnapshot } from '../context.ts'
 
-const defaults: EnvironmentSettings = {
+export const defaults: EnvironmentSettings = {
   enabled: true,
   locale: 'zh-CN',
   injectTime: true,
@@ -30,15 +31,10 @@ const defaults: EnvironmentSettings = {
   showDeviceModel: true,
   showDevicePlatform: true,
   customDeviceName: '',
-  sectionOrder: 20,
 }
 
 const getWeatherStatus = createStatusService()
 let browserLocationCache: any = null
-
-function decode(value: unknown) {
-  return value && typeof value === 'object' ? { ...defaults, ...value as Partial<EnvironmentSettings> } : undefined
-}
 
 function currentLocale(settings?: EnvironmentSettings) {
   return navigator.language || settings?.locale || 'en-US'
@@ -223,9 +219,14 @@ const box: React.CSSProperties = {
 }
 const row: React.CSSProperties = { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }
 
-function Section({ scope }: { scope: SettingsScope<EnvironmentSettings> }) {
-  const state = useSyncExternalStore(scope.subscribe.bind(scope), scope.getSnapshot.bind(scope))
+function Section({ scope }: { scope: ConfigForm<EnvironmentSettings> }) {
+  const subscribe = useMemo(() => scope.subscribe.bind(scope), [scope])
+  const getSnapshot = useMemo(() => scope.getSnapshot.bind(scope), [scope])
+  const state = useSyncExternalStore(subscribe, getSnapshot)
   const settings = state.value ?? defaults
+  // Editability follows the Host's answer for this entry alone; a field that
+  // fails to decode must not turn the whole page read-only.
+  const writable = state.writable
   const zh = isChinese(settings)
   const t = (chinese: string, english: string) => localText(zh, chinese, english)
   const [preview, setPreview] = useState(t('尚未读取环境状态', 'Environment status has not been loaded'))
@@ -233,7 +234,7 @@ function Section({ scope }: { scope: SettingsScope<EnvironmentSettings> }) {
   const [busy, setBusy] = useState(false)
   const set = (key: keyof EnvironmentSettings, value: unknown) => void scope.set(key, value)
   const toggle = (key: keyof EnvironmentSettings, label: string) => (
-    <label style={row}><input type="checkbox" checked={Boolean(settings[key])} disabled={!state.writable} onChange={event => set(key, event.target.checked)} />{label}</label>
+    <label style={row}><input type="checkbox" checked={Boolean(settings[key])} disabled={!writable} onChange={event => set(key, event.target.checked)} />{label}</label>
   )
   const refresh = async (force = false) => {
     setBusy(true)
@@ -344,14 +345,14 @@ function Section({ scope }: { scope: SettingsScope<EnvironmentSettings> }) {
   </section>
 }
 
-export const inject = ['slots', 'settingsScope', 'connection', 'remote']
-export function apply(ctx: ClientContext) {
-  const scope = ctx.settingsScope.bind<EnvironmentSettings>({ namespace: 'environment-context', decode })
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
+export const inject = ['slots', 'configForms']
+export function apply(ctx: Context) {
+  const scope = ctx.configForms.get<EnvironmentSettings>('environment-context')
+  ctx.effect(() => ctx.configForms.whileServed(['environment-context'], () => ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section',
     id: 'environment-context',
     order: 35,
     label: () => localText(isChinese(), '环境上下文', 'Environment Context'),
     inject: () => ({ scope }),
-  }, Section as any))
+  }, Section))))
 }
