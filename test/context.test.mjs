@@ -31,7 +31,7 @@ assert.ok(!english.includes('【现实环境信息】'), 'non-Chinese browser lo
 
 // --- DSH 0.2 settings model -------------------------------------------------
 const packageJson = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'))
-assert.equal(packageJson.version, '0.4.0')
+assert.equal(packageJson.version, '0.4.1')
 assert.equal(SETTINGS_NAMESPACE, 'environment-context')
 assert.deepEqual(Object.keys(expectedDefaults).sort(), [...settingsKeys].sort())
 assert.deepEqual(readSettings(Config({})), expectedDefaults)
